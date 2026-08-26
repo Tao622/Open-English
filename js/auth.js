@@ -62,7 +62,12 @@ const Auth = (function () {
   async function register(username, password) {
     if (!client) return { error: '尚未配置 Supabase（见 README）' };
     if (!usernameLike(username)) return { error: '用户名只能由字母或数字组成（3-20 位），如 xiaoying、13800001111' };
-    const { data, error } = await client.auth.signUp({ email: toEmail(username), password });
+    const name = username.trim();
+    const { data, error } = await client.auth.signUp({
+      email: toEmail(name),
+      password,
+      options: { data: { username: name } }
+    });
     if (error) return { error: friendly(error.message) };
     return { data };
   }
