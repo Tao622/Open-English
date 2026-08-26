@@ -63,7 +63,7 @@ input, textarea { font-family: inherit; }
 /* 视图容器 */
 .view {
   min-height: 100vh;
-  padding: 0 20px calc(110px + env(safe-area-inset-bottom));
+  padding: 0 20px calc(138px + env(safe-area-inset-bottom));
   display: none;
 }
 .view.active { display: block; }
@@ -118,9 +118,10 @@ input, textarea { font-family: inherit; }
 }
 
 /* ---------- 底部导航 ---------- */
+/* 上移 28px：避开 Netlify 免费版在页面底部注入的角标 */
 .tab-bar {
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: 28px; left: 0; right: 0;
   max-width: 430px;
   margin: 0 auto;
   height: 84px;
@@ -155,7 +156,7 @@ input, textarea { font-family: inherit; }
 /* AI 悬浮按钮（右下角） */
 .ai-fab {
   position: fixed;
-  bottom: 100px;
+  bottom: 128px;
   right: calc(50% - 215px + 12px);
   width: 56px; height: 56px;
   border-radius: 50%;

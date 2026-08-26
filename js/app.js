@@ -16,7 +16,7 @@
   const ROUTES = ['home', 'vocab', 'listening', 'courses', 'wordbook', 'practice', 'listen-play', 'profile', 'settings', 'checkin', 'ai'];
   let route = 'home';
   let routeArg = '';      // practice/listen-play 的 courseId/listenId
-  let fromRoute = 'home';
+  const navStack = [];    // 导航栈：记录每层来源页面，返回时逐级回退
 
   function parseHash() {
     const h = location.hash.replace(/^#\/?/, '');
@@ -31,14 +31,20 @@
   }
 
   function navigate(r, arg) {
-    fromRoute = route;
+    navStack.push({ r: route, arg: routeArg });
+    if (navStack.length > 20) navStack.shift();   // 防止无限累积
     if (arg) location.hash = '#/' + r + '/' + encodeURIComponent(arg);
     else location.hash = '#/' + r;
   }
 
   function goBack() {
-    if (fromRoute && ROUTES.includes(fromRoute)) navigate(fromRoute);
-    else navigate('home');
+    const prev = navStack.pop();
+    if (prev && ROUTES.includes(prev.r)) {
+      if (prev.arg) location.hash = '#/' + prev.r + '/' + encodeURIComponent(prev.arg);
+      else location.hash = '#/' + prev.r;
+    } else {
+      location.hash = '#/home';
+    }
   }
 
   window.addEventListener('hashchange', render);
