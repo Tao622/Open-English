@@ -1660,6 +1660,14 @@
     'back'() { TTS.stop(); goBack(); },
     'go-ai'() { navigate('ai'); },
 
+    /* AI 助手 */
+    'ai-quick'(arg) { aiSend(arg); },
+    'ai-send'() {
+      const input = $('#ai-input');
+      if (input) P.ai.input = input.value;
+      aiSend();
+    },
+
     /* 首页 */
     'go-today-task'() {
       const doneToday = Store.vocabDoneToday();
