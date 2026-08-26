@@ -1,0 +1,9 @@
+{
+  "name": "score-proxy",
+  "version": "1.0.0",
+  "description": "笑小英口语打分代理（讯飞语音评测转发）",
+  "main": "index.js",
+  "dependencies": {
+    "ws": "^8.17.0"
+  }
+}

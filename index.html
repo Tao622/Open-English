@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="theme-color" content="#2E9E6B">
+  <title>笑小英口语练习</title>
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- Supabase 用户认证与云端进度（未配置时自动回退单机模式） -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <!-- 内容包：30 节场景课程 / 30 天词汇（3 份）/ 30 段慢速听力 -->
+  <script src="js/data-courses.js"></script>
+  <script src="js/data-vocab-a.js"></script>
+  <script src="js/data-vocab-b.js"></script>
+  <script src="js/data-vocab-c.js"></script>
+  <script src="js/data-vocab.js"></script>
+  <script src="js/data-listening.js"></script>
+  <!-- 聚合层：必须在所有内容包之后加载 -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/tts.js"></script>
+  <script src="js/scorer.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
