@@ -137,7 +137,7 @@
     }).join(' ');
   }
 
-  /** 单词加入生词本（词库查词义，查不到就用已有生词本条目） */
+  /** 查词并弹出词义面板（点击单词后先显示释义，用户再决定是否加入生词本） */
   function tapWord(en) {
     const key = String(en).toLowerCase();
     let found = Vocab.find(key);
@@ -149,8 +149,35 @@
       if (wb) word = { en: wb.en, cn: wb.cn, phonetic: wb.phonetic || '' };
     }
     if (!word) { toast(`没查到「${en}」的词义，问问小英老师吧`); return; }
-    if (Store.addWord(word)) toast(`「${word.en}」已加入生词本 ✓`);
-    else toast('这个词已经在生词本里啦');
+    showWordModal(word);
+  }
+
+  /** 显示单词详情浮层 */
+  function showWordModal(word) {
+    let modal = $('.word-modal');
+    if (modal) modal.remove();
+    modal = document.createElement('div');
+    modal.className = 'word-modal active';
+    modal.innerHTML = `
+      <div class="word-modal-mask" data-action="word-modal-close"></div>
+      <div class="word-modal-panel">
+        <div class="word-modal-head">
+          <div class="word-modal-title">${esc(word.en)}</div>
+          <button class="word-modal-close" data-action="word-modal-close">×</button>
+        </div>
+        ${word.phonetic ? `<div class="word-modal-phonetic">${esc(word.phonetic)}</div>` : ''}
+        <div class="word-modal-meaning">${esc(word.cn)}</div>
+        <div class="word-modal-actions">
+          <button class="word-modal-btn secondary" data-action="word-modal-play" data-word="${esc(word.en)}">🔊 听发音</button>
+          <button class="word-modal-btn" data-action="word-modal-add" data-word="${esc(word.en)}" data-cn="${esc(word.cn)}" data-ph="${esc(word.phonetic || '')}">+ 加入生词本</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+  }
+
+  function closeWordModal() {
+    const modal = $('.word-modal');
+    if (modal) modal.remove();
   }
 
   /* ============ 渲染：外壳 ============ */
@@ -277,25 +304,26 @@
 
   /* ============ 首页：今日任务汇总 ============ */
   function renderHome() {
-    const s = Store.state.settings;
-    const v = Store.state.vocab;
-    const day = Math.min(30, v.day || 1);
-    const goal = s.todayGoal;
-    const todayCount = Store.vocabCountToday();
-    const doneToday = Store.vocabDoneToday();
-    const courseDone = Store.courseDoneToday();
-    const wordPct = Math.min(100, Math.round((doneToday ? goal : todayCount) / goal * 100));
-    const daily = CONTENT.getDailySentence();
-    const weekDone = Store.weekDays().filter(d => d.done).length;
+      const s = Store.state.settings;
+      const v = Store.state.vocab;
+      const userName = Auth.username() || s.userName || '同学';
+      const day = Math.min(30, v.day || 1);
+      const goal = s.todayGoal;
+      const todayCount = Store.vocabCountToday();
+      const doneToday = Store.vocabDoneToday();
+      const courseDone = Store.courseDoneToday();
+      const wordPct = Math.min(100, Math.round((doneToday ? goal : todayCount) / goal * 100));
+      const daily = CONTENT.getDailySentence();
+      const weekDone = Store.weekDays().filter(d => d.done).length;
 
-    return `
+      return `
     <div class="view active">
       <div class="home-header">
         <div>
-          <div class="home-greeting">${greeting()}，${esc(s.userName)}</div>
+          <div class="home-greeting">${greeting()}，${esc(userName)}</div>
           <div class="home-date">${dateText()} · 连续打卡 ${Store.state.streak} 天 · 本周 ${weekDone}/7</div>
         </div>
-        <div class="home-avatar" data-action="nav" data-arg="profile">${esc(s.userName.charAt(0))}</div>
+        <div class="home-avatar" data-action="nav" data-arg="profile">${esc(userName.charAt(0))}</div>
       </div>
 
       <div class="task-card">
@@ -941,7 +969,7 @@
         ${steps.map(s => `<button class="step-chip ${p.step === s.n ? 'active' : ''}" data-action="listen-step" data-arg="${s.n}">${s.label}</button>`).join('')}
       </div>
       ${body}
-      <div style="text-align:center;color:var(--c-text-light);font-size:12px;margin-top:14px">👆 轻点英文单词可加入生词本</div>
+      <div style="text-align:center;color:var(--c-text-light);font-size:12px;margin-top:14px">👆 轻点英文单词查词义、加生词本</div>
     </div>`;
   }
 
@@ -961,18 +989,25 @@
     if (n === 1) { /* 等用户点播放 */ }
   }
 
-  /** 整段连读（第一遍盲听） */
-  function listenFull() {
+  /** 整段连读（第一遍盲听）：逐句朗读，句间停顿，更有对话感 */
+  async function listenFull() {
     const p = P.listenPlay;
     const dlg = CONTENT.getListening(p.id);
     if (!dlg) return;
     if (p.playing) { TTS.stop(); p.playing = false; render(); return; }
     p.playing = true;
     render();
-    const full = dlg.dialogue.map(s => s.en).join(' ');
-    TTS.speak(full, { rate: 0.75 }).then(() => {
-      if (P.listenPlay.playing) { P.listenPlay.playing = false; render(); }
-    });
+    for (let i = 0; i < dlg.dialogue.length; i++) {
+      if (!P.listenPlay.playing) break;
+      p.index = i;
+      render();
+      await TTS.speak(dlg.dialogue[i].en, { rate: 0.75 });
+      // 句间短暂停顿，模拟真实对话呼吸感
+      if (i < dlg.dialogue.length - 1 && P.listenPlay.playing) {
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+    if (P.listenPlay.playing) { P.listenPlay.playing = false; render(); }
   }
 
   /** 逐句顺序播放（第二遍） */
@@ -1563,8 +1598,8 @@
       </div>
 
       <div class="setting-block">
-        <div class="setting-label">称呼（首页问候语）</div>
-        <input class="setting-input" id="set-name" value="${esc(s.userName)}">
+        <div class="setting-label">当前用户</div>
+        <div class="setting-readonly">${esc(Auth.username() || s.userName || '同学')}</div>
       </div>
 
       <div class="setting-block">
@@ -1704,6 +1739,19 @@
       else toast('暂不支持添加该词');
     },
     'word-del'(arg) { Store.removeWord(arg); render(); },
+    'word-modal-close'() { closeWordModal(); },
+    'word-modal-play'(arg) { TTS.speak(arg, { rate: 0.75 }); },
+    'word-modal-add'(arg, el) {
+      const en = el.getAttribute('data-word');
+      const cn = el.getAttribute('data-cn');
+      const ph = el.getAttribute('data-ph');
+      if (Store.addWord({ en, cn, phonetic: ph })) {
+        toast(`「${en}」已加入生词本 ✓`);
+        closeWordModal();
+      } else {
+        toast('这个词已经在生词本里啦');
+      }
+    },
 
     /* 打卡 / 我的 */
     'share-checkin'() {
@@ -1715,14 +1763,12 @@
       render();
     },
     'save-settings'() {
-      const name = $('#set-name') ? $('#set-name').value.trim() : Store.state.settings.userName;
       const goal = parseInt(($('#set-goal') ? $('#set-goal').value : 20), 10) || 20;
       const key = $('#set-key') ? $('#set-key').value.trim() : '';
       const baseUrl = $('#set-baseurl') ? $('#set-baseurl').value.trim() : '';
       const model = $('#set-model') ? $('#set-model').value.trim() : '';
       const scoreProxy = $('#set-scoreproxy') ? $('#set-scoreproxy').value.trim() : '';
       Store.updateSettings({
-        userName: name || '王阿姨',
         todayGoal: Math.min(50, Math.max(5, goal)),
         llmApiKey: key,
         llmBaseUrl: baseUrl || 'https://api.deepseek.com/v1/chat/completions',
@@ -1771,6 +1817,9 @@
       if (user) {
         if (event === 'SIGNED_IN' || event === 'SIGNED_UP' || event === 'INITIAL_SESSION') {
           await Store.loadFromCloud();
+          // 登录后同步用户名到本地设置，首页/设置页不再显示默认"王阿姨"
+          const name = Auth.username();
+          if (name) Store.updateSettings({ userName: name });
           location.hash = '#/home';
         }
         render();
