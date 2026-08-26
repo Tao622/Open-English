@@ -49,7 +49,9 @@ npx serve .
 
 1. 注册 [supabase.com](https://supabase.com)（免费，500MB 数据库 + 5 万月活足够家用）→ 新建项目，
    记下区域选离你近的（如 `Singapore` / `ap-southeast-1`），等 1-2 分钟项目创建完成
-2. 左侧菜单 **Authentication → Sign In / Up**，把 **Username** 登录方式**开启**
+2. 左侧菜单 **Authentication → Sign In / Up**，找到 **Email** 登录方式**开启**（默认开启），
+   并把 **Confirm email（邮件验证）关闭**——否则注册后要收确认信，而我们的账号是自动补全的
+   虚拟邮箱（`用户名@user.local`），收不到信就永远登不进
 3. 左侧菜单 **Project Settings → API**，复制 **Project URL** 和 **anon public key**
 4. 打开 `js/config.js`，把两个值填进引号里：
 
@@ -62,6 +64,11 @@ const SUPABASE_CONFIG = {
 
 5. **建表**（放进度用）：左侧 **SQL Editor → New query**，粘贴 `supabase-setup.sql` 内容运行一次即可
 6. 重新部署网页，打开即是登录页：注册 → 自动进入主界面；以后打开自动保持登录。
+
+**账号规则（妈妈只需记两样：用户名 + 密码）**：
+- 注册时输入**用户名**（仅字母/数字，3-20 位，如 `xiaoying`、`13800001111`）+ 密码（至少 6 位）
+- 系统自动补全为 `用户名@user.local` 存进 Supabase（`.local` 是保留域名，仅当账号身份证，不需要真实邮箱）
+- 界面始终显示用户名本身，妈妈看不到那串尾巴；重名注册会提示「这个用户名已经被注册了」
 
 **说明**：
 - 密码由 Supabase 服务端用 **bcrypt 加盐哈希**存储，数据库里没有明文密码，网页端也拿不到

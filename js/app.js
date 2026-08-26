@@ -235,8 +235,9 @@
           <button class="auth-tab ${!isLogin ? 'active' : ''}" data-action="auth-mode" data-arg="register">注册</button>
         </div>
 
-        <input id="auth-username" class="auth-input" type="text" placeholder="用户名" autocomplete="username">
+        <input id="auth-username" class="auth-input" type="text" placeholder="用户名（字母或数字，如 xiaoying）" autocomplete="username">
         <input id="auth-password" class="auth-input" type="password" placeholder="密码（至少 6 位）" autocomplete="${isLogin ? 'current-password' : 'new-password'}">
+        <div class="auth-hint">不用邮箱也不用手机号：用户名只支持字母或数字（3-20 位），系统自动补全账号格式</div>
         <button id="auth-submit-btn" class="btn-primary auth-submit" data-action="auth-submit">${isLogin ? '登 录' : '注 册'}</button>
         <div id="auth-msg" class="auth-msg"></div>
       </div>
@@ -251,6 +252,7 @@
     const user = u ? u.value.trim() : '';
     const pass = p ? p.value : '';
     if (!user || !pass) { if (msg) msg.textContent = '请先填上用户名和密码'; return; }
+    if (!/^[A-Za-z0-9]{3,20}$/.test(user)) { if (msg) msg.textContent = '用户名只能由字母或数字组成（3-20 位）'; return; }
     if (P.auth.mode === 'register' && pass.length < 6) { if (msg) msg.textContent = '密码至少要 6 位'; return; }
     P.auth.busy = true;
     if (btn) btn.disabled = true;
@@ -263,7 +265,7 @@
       return;
     }
     if (P.auth.mode === 'register' && !Auth.user()) {
-      if (msg) msg.textContent = '注册成功！按提示完成验证后就能登录了。';
+      if (msg) msg.textContent = '注册成功！';
     }
   }
 
