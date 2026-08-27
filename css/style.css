@@ -1041,6 +1041,15 @@ input, textarea { font-family: inherit; }
   vertical-align: 3px;
 }
 .listen-line.active .line-no { background: var(--c-primary); color: var(--c-white); }
+/* 听力说话人徽标（女声/男声） */
+.line-no.sp-a, .line-no.sp-b {
+  width: 26px; height: 26px;
+  font-size: 17px;
+  background: transparent;
+  flex: none;
+}
+.listen-line.active .line-no.sp-a,
+.listen-line.active .line-no.sp-b { background: transparent; }
 .line-en { font-size: 16px; color: var(--c-text); font-weight: 600; line-height: 1.7; }
 .line-cn { display: block; font-size: 14px; color: var(--c-text-sub); margin-top: 4px; line-height: 1.6; }
 

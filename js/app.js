@@ -931,6 +931,7 @@
         <div class="listen-blind">
           <div class="listen-blind-title">👂 第一遍 · 盲听</div>
           <div class="listen-tip">先不看字幕，整体听一遍，抓住大意就行</div>
+          <div class="listen-tip">这是一段两人对话：👩 女声 和 👨 男声</div>
           <div class="audio-row">
             <button class="play-circle" data-action="listen-full">${p.playing ? '⏸' : '▶'}</button>
           </div>
@@ -942,7 +943,7 @@
         <div class="listen-lines">
           ${dlg.dialogue.map((s, i) => `
             <div class="listen-line ${i === p.index ? 'active' : ''}" data-action="listen-line" data-arg="${i}">
-              <span class="line-no">${i + 1}</span>
+              ${spBadge(s)}
               <span class="line-en">${wordify(s.en)}</span>
             </div>`).join('')}
         </div>
@@ -955,7 +956,7 @@
         <div class="listen-lines">
           ${dlg.dialogue.map((s, i) => `
             <div class="listen-line ${i === p.index ? 'active' : ''}" data-action="listen-line" data-arg="${i}">
-              <span class="line-no">${i + 1}</span>
+              ${spBadge(s)}
               <span class="line-en">${wordify(s.en)}</span>
               <span class="line-cn">${esc(s.cn)}</span>
             </div>`).join('')}
@@ -975,7 +976,7 @@
         ${steps.map(s => `<button class="step-chip ${p.step === s.n ? 'active' : ''}" data-action="listen-step" data-arg="${s.n}">${s.label}</button>`).join('')}
       </div>
       ${body}
-      <div style="text-align:center;color:var(--c-text-light);font-size:12px;margin-top:14px">👆 轻点英文单词查词义、加生词本</div>
+      <div style="text-align:center;color:var(--c-text-light);font-size:12px;margin-top:14px">👩 女声 / 👨 男声双人对读 · 轻点英文单词查词义、加生词本</div>
     </div>`;
   }
 
@@ -983,6 +984,16 @@
     TTS.stop();
     P.listenPlay = { id, step: 1, index: 0, playing: false };
     navigate('listen-play', id);
+  }
+
+  /** 听力对话说话人：A=女声 👩，B=男声 👨（数据里每句已标 sp） */
+  function spBadge(s) {
+    return s.sp === 'b'
+      ? '<span class="line-no sp-b">👨</span>'
+      : '<span class="line-no sp-a">👩</span>';
+  }
+  function spVoice(s) {
+    return s.sp === 'b' ? 'm' : 'f';
   }
 
   function setListenStep(n) {
@@ -1007,7 +1018,7 @@
       if (!P.listenPlay.playing) break;
       p.index = i;
       render();
-      await TTS.speak(dlg.dialogue[i].en, { rate: 0.75 });
+      await TTS.speak(dlg.dialogue[i].en, { rate: 0.75, gender: spVoice(dlg.dialogue[i]) });
       // 句间短暂停顿，模拟真实对话呼吸感
       if (i < dlg.dialogue.length - 1 && P.listenPlay.playing) {
         await new Promise(r => setTimeout(r, 600));
@@ -1028,7 +1039,7 @@
       if (!P.listenPlay.playing) break;
       p.index = i;
       render();
-      await TTS.speak(dlg.dialogue[i].en, { rate: 0.75 });
+      await TTS.speak(dlg.dialogue[i].en, { rate: 0.75, gender: spVoice(dlg.dialogue[i]) });
     }
     if (P.listenPlay.playing) {
       p.playing = false;
@@ -1045,7 +1056,7 @@
     if (!dlg) return;
     p.index = i;
     TTS.stop();
-    TTS.speak(dlg.dialogue[i].en, { rate: 0.75 }).then(() => {
+    TTS.speak(dlg.dialogue[i].en, { rate: 0.75, gender: spVoice(dlg.dialogue[i]) }).then(() => {
       if (p.step === 3 && i >= dlg.dialogue.length - 1) {
         Store.markListeningDone(p.id);
         toast('这节听力听完啦 ✓');

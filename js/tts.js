@@ -32,6 +32,21 @@ const TTS = (function () {
     return en[0];
   }
 
+  /** 挑选英文男声（与女声区分开；找不到就用音调区分兜底） */
+  function pickMaleVoice(femaleVoice) {
+    const list = loadVoices();
+    const en = list.filter(v => v.lang && v.lang.toLowerCase().startsWith('en')
+      && (!femaleVoice || v.name !== femaleVoice.name));
+    if (!en.length) return null;
+    const preferred = ['Daniel', 'Google UK English Male', 'Microsoft David', 'Microsoft Guy', 'Microsoft Christopher', 'Aaron', 'Alex', 'Oliver', 'Rishi', 'Fred', 'Male'];
+    for (const name of preferred) {
+      const hit = en.find(v => v.name.includes(name));
+      if (hit) return hit;
+    }
+    // 没有明显男声：只要和女声不是同一个，就拿来当第二声线
+    return en[0];
+  }
+
   function speak(text, opts) {
     return new Promise((resolve) => {
       if (!window.speechSynthesis) { resolve(); return; }
@@ -39,10 +54,19 @@ const TTS = (function () {
 
       const u = new SpeechSynthesisUtterance(text);
       u.lang = 'en-US';
-      const v = pickVoice();
-      if (v) u.voice = v;
+      if (opts && opts.gender === 'm') {
+        // 男声：优先真的男声音色，找不到就压低音调区分
+        const f = pickVoice();
+        const m = pickMaleVoice(f);
+        if (m) { u.voice = m; u.pitch = 0.95; }
+        else if (f) { u.voice = f; u.pitch = 0.6; }
+        else { u.pitch = 0.6; }
+      } else {
+        const v = pickVoice();
+        if (v) u.voice = v;
+        u.pitch = 1.15;
+      }
       u.rate = (opts && opts.rate) || 1; // 0.5 = 慢速
-      u.pitch = 1.02;
       u.onend = () => resolve();
       u.onerror = () => resolve();
       window.speechSynthesis.speak(u);
