@@ -402,7 +402,8 @@
     const grid = Vocab.days().map(d => {
       const dd = Vocab.getDay(d);
       const learnedCount = Object.keys(v.learned[d] || {}).length;
-      const done = learnedCount >= dd.words.length;
+      // 当天的完成判定跟随每日数量设置
+      const done = learnedCount >= Math.min(goal, dd.words.length);
       const cls = done ? 'done' : (d === day ? 'today' : '');
       return `<div class="cal-cell ${cls}" data-action="vocab-cal" data-arg="${d}">${d}</div>`;
     }).join('');
@@ -417,7 +418,7 @@
       <div class="vocab-today-card">
         <div class="vocab-today-topic">${dayData ? '第' + day + '天 · ' + dayData.topic : '30 天全部学完啦'}</div>
         ${dayData ? `
-          <div class="vocab-today-meta">${dayData.words.length} 个词 · 四级词汇精选，偏向旅行日常</div>
+          <div class="vocab-today-meta">今日 ${Math.min(goal, dayData.words.length)} 个词 · 四级词汇精选，偏向旅行日常</div>
           <div class="task-progress" style="margin-top:10px">
             <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
             <div class="task-progress-nums"><span>${doneToday ? '今天已完成 ✓' : `已学 ${todayCount} 个`}</span><span>${pct}%</span></div>
@@ -494,7 +495,10 @@
         <div class="explain-en">${esc(w.en)} <span class="explain-ph">${esc(w.ph || '')}</span></div>
         <div class="explain-defs">${w.defs.map(d => `<div class="explain-def"><span class="explain-p">${esc(d.p)}</span>${esc(d.c)}</div>`).join('')}</div>
         <div class="explain-divider"></div>
-        <div class="explain-ex">${esc(w.ex)}</div>
+        <div class="explain-ex">
+          ${esc(w.ex)}
+          <button class="ai-mini-btn" data-action="vocab-ex-play" title="听例句读音" style="margin-left:8px;vertical-align:middle">🔊</button>
+        </div>
         <div class="explain-ec">${esc(w.ec)}</div>
       </div>
       <div class="action-row">
@@ -602,13 +606,15 @@
     if (!dayData) { toast('30 天内容都学完啦，去生词本复习吧'); navigate('wordbook'); return; }
 
     const learnedSet = v.learned[day] || {};
-    const newWords = dayData.words.filter(w => !learnedSet[w.en]);
+    // 每日新词数量跟随设置（todayGoal），不足一天词表时取全部
+    const goal = Math.max(1, Store.state.settings.todayGoal || 20);
+    const newWords = dayData.words.filter(w => !learnedSet[w.en]).slice(0, goal);
     if (newWords.length === 0) {
       // 新词都学过（异常恢复）→ 直接进入中译英
       P.vocab.phase = 'translate';
       P.vocab.day = day; P.vocab.topic = dayData.topic;
-      P.vocab.newWords = dayData.words;
-      P.vocab.translateList = dayData.words.slice();
+      P.vocab.newWords = dayData.words.slice(0, goal);
+      P.vocab.translateList = dayData.words.slice(0, goal);
       P.vocab.translateIndex = 0;
       P.vocab.translatePassed = {};
       P.vocab.translateResult = null;
@@ -1705,6 +1711,10 @@
       if (w && Store.addWord({ en: w.en, cn: Vocab.cnShort(w), phonetic: w.ph || '' })) toast('已加入生词本 ✓');
       else if (w) toast('这个词已经在生词本里啦');
     },
+    'vocab-ex-play'() {
+      const w = P.vocab.explainWord || P.vocab.currentWord;
+      if (w && w.ex) TTS.speak(w.ex, { rate: 0.75 });
+    },
     'translate-listen'() { translateListen(); },
     'translate-say'() { translateSay(); },
     'translate-next'() { translateNext(); },
@@ -1748,7 +1758,10 @@
     },
     'word-del'(arg) { Store.removeWord(arg); render(); },
     'word-modal-close'() { closeWordModal(); },
-    'word-modal-play'(arg) { TTS.speak(arg, { rate: 0.75 }); },
+    'word-modal-play'(arg, el) {
+      const w = el.getAttribute('data-word');
+      if (w) TTS.speak(w, { rate: 0.75 });
+    },
     'word-modal-add'(arg, el) {
       const en = el.getAttribute('data-word');
       const cn = el.getAttribute('data-cn');

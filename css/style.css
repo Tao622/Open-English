@@ -1060,6 +1060,8 @@ input, textarea { font-family: inherit; }
   display: none;
   align-items: flex-end;
   justify-content: center;
+  /* 上移 56px：避开 Netlify 免费版在页面底部注入的角标 */
+  padding-bottom: 56px;
 }
 .word-modal.active { display: flex; }
 .word-modal-mask {
